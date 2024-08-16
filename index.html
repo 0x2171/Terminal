@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lilik</title>
+</head>
+<style>
+body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: 'Courier New', Courier, monospace;
+    color: lime;
+    background-color: black;
+}
+
+.background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+}
+
+.content {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    text-align: center;
+    z-index: 1;
+}
+
+h1 {
+    font-size: 2em;
+    margin-bottom: 20px;
+}
+
+button {
+    background-color: black;
+    border: 2px solid lime;
+    color: lime;
+    padding: 10px 20px;
+    margin: 10px;
+    font-size: 1em;
+    cursor: pointer;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+button:hover {
+    background-color: lime;
+    color: black;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+.modal-content {
+    background-color: black;
+    margin: 15% auto;
+    padding: 20px;
+    border: 2px solid lime;
+    width: 80%;
+    text-align: center;
+    color: red;
+}
+
+.progress-bar {
+    width: 100%;
+    background-color: #333;
+    border: 1px solid lime;
+    margin-top: 20px;
+}
+
+.progress-bar-fill {
+    height: 20px;
+    background-color: lime;
+    width: 0;
+}
+</style>
+<body>
+    <div class="background">
+        <canvas id="matrix"></canvas>
+    </div>
+    <div class="content">
+        <h1>One LiLik</h1>
+        <button onclick="hackButton()">Scan System</button>
+        <button onclick="decryptButton()">Decrypt Files</button>
+        <button onclick="scanButton()">Scan Network</button>
+    </div>
+
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <div id="modal-message"></div>
+            <div class="progress-bar">
+                <div class="progress-bar-fill"></div>
+            </div>
+        </div>
+    </div>
+
+<script src="matrix.js"></script>
+<script>
+
+// Button functions
+function showModal(message) {
+    const modal = document.getElementById('modal');
+    const modalMessage = document.getElementById('modal-message');
+    const progressBarFill = document.querySelector('.progress-bar-fill');
+
+    modalMessage.textContent = message;
+    modal.style.display = 'block';
+
+    let width = 0;
+    const interval = setInterval(() => {
+        if (width >= 100) {
+            clearInterval(interval);
+            modal.style.display = 'none';
+            progressBarFill.style.width = '0';
+        } else {
+            width++;
+            progressBarFill.style.width = width + '%';
+        }
+    }, 28); // 5000ms / 100 = 50ms
+}
+
+function hackButton() {
+    showModal('Scanning System...');
+    getDeviceInfo().then(inf => {
+        setTimeout(() => {
+           alert('System Info\n\n' + JSON.stringify(inf, null, 2));
+        }, 3000);
+    }).catch(err => {
+        alert('Error scanning network: ' + err.message);
+    });
+}
+
+function decryptButton() {
+    showModal('Decrypting Files...');
+    setTimeout(() => {
+        alert('Files Decrypted!');
+    }, 5000);
+}
+
+function scanButton() {
+    showModal('Scanning Network...');
+    getLocalIPs().then(ips => {
+        setTimeout(() => {
+           alert('Network Scanned!\n\nFound IPs: ' + ips.join(', '));
+        }, 3000);
+    }).catch(err => {
+        alert('Error scanning network: ' + err.message);
+    });
+}
+
+function getLocalIPs() {
+    return new Promise((resolve, reject) => {
+        const pc = new RTCPeerConnection({ iceServers: [] });
+        pc.createDataChannel('');
+
+        pc.onicecandidate = e => {
+            if (e.candidate) {
+                const ip = e.candidate.address;
+                if (ip.startsWith('192.') || ip.startsWith('10.') || ip.startsWith('172.')) {
+                    resolve([ip]);
+                }
+            }
+        };
+
+        pc.createOffer().then(offer => {
+            pc.setLocalDescription(offer);
+        }).catch(err => {
+            reject(err);
+        });
+    });
+}
+    
+function getDeviceInfo() {
+    return new Promise((resolve, reject) => {
+        const info = {
+            userAgent: navigator.userAgent,
+            screenWidth: window.screen.width,
+            screenHeight: window.screen.height,
+            battery: navigator.getBattery ? navigator.getBattery().then(battery => ({
+                level: battery.level,
+                charging: battery.charging
+            })) : 'Battery API not supported',
+            connection: navigator.connection ? {
+                effectiveType: navigator.connection.effectiveType,
+                downlink: navigator.connection.downlink,
+                rtt: navigator.connection.rtt
+            } : 'Network Information API not supported',
+            language: navigator.language,
+            platform: navigator.platform,
+            hardwareConcurrency: navigator.hardwareConcurrency,
+            deviceMemory: navigator.deviceMemory ? navigator.deviceMemory : 'Device Memory API not supported',
+            cookieEnabled: navigator.cookieEnabled,
+            onLine: navigator.onLine,
+            geolocation: navigator.geolocation ? 'Geolocation API supported' : 'Geolocation API not supported',
+            webdriver: navigator.webdriver ? 'WebDriver API supported' : 'WebDriver API not supported',
+            appCodeName: navigator.appCodeName,
+            appName: navigator.appName,
+            appVersion: navigator.appVersion,
+            product: navigator.product,
+            productSub: navigator.productSub,
+            vendor: navigator.vendor,
+            vendorSub: navigator.vendorSub,
+            userAgentData: navigator.userAgentData ? {
+                brands: navigator.userAgentData.brands.map(brand => brand.brand + ' ' + brand.version),
+                mobile: navigator.userAgentData.mobile,
+                platform: navigator.userAgentData.platform
+            } : 'User Agent Data API not supported',
+            maxTouchPoints: navigator.maxTouchPoints,
+            doNotTrack: navigator.doNotTrack,
+            javaEnabled: navigator.javaEnabled(),
+            mimeTypes: Array.from(navigator.mimeTypes).map(mimeType => mimeType.type),
+            plugins: Array.from(navigator.plugins).map(plugin => plugin.name),
+            oscpu: navigator.oscpu,
+            webkitTemporaryStorage: navigator.webkitTemporaryStorage ? {
+                quota: navigator.webkitTemporaryStorage.queryUsageAndQuota(
+                    (used, remaining) => ({ used, remaining }),
+                    (err) => console.error(err)
+                )
+            } : 'Webkit Temporary Storage API not supported'
+        };
+
+        Promise.all([info.battery]).then(results => {
+            info.battery = results[0];
+            resolve(info);
+        }).catch(err => {
+            reject(err);
+        });
+    });
+}
+</script>
+</body>
+</html>
